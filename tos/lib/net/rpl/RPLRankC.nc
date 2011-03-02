@@ -94,6 +94,21 @@ implementation {
   RPLRankP.Leds -> LedsC;
   RPLRankP.RouteInfo -> RPLRoutingEngineC;
   RPLRankP.IPAddress -> IPAddressC;
-  RPLRankP.ForwardingTable -> IPStackC;
+  //RPLRankP.ForwardingTable -> IPStackC;
   RPLRankP.ForwardingEvents -> IPStackC.ForwardingEvents[RPL_IFACE];
+
+#ifdef RPL_OF_MRHOF
+  components RPLMRHOFP;
+  RPLRankP.RPLOF -> RPLMRHOFP;
+  RPLMRHOFP.ForwardingTable -> IPStackC;
+  RPLMRHOFP.RPLRoute -> RPLRoutingEngineC;
+  RPLMRHOFP.ParentTable -> RPLRankP;
+#else
+  components RPLOF0P;
+  RPLRankP.RPLOF -> RPLOF0P;
+  RPLOF0P.ForwardingTable -> IPStackC;
+  RPLOF0P.RPLRoute -> RPLRoutingEngineC;
+  RPLOF0P.ParentTable -> RPLRankP;
+#endif
+
 }

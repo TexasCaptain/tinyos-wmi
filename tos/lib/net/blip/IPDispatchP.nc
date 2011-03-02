@@ -79,10 +79,18 @@ module IPDispatchP {
   }
 } implementation {
 
-#undef printfUART
-#undef printfUART_buf
-#define printfUART(FMT, args ...)
-#define printfUART_buf(buf, len)
+/* #undef printfUART */
+/* #undef printfUART_buf */
+/* #define printfUART(FMT, args ...) */
+/* #define printfUART_buf(buf, len) */
+
+#ifndef BLIP_L2_RETRIES
+#define BLIP_L2_RETRIES 3
+#endif
+
+#ifndef BLIP_L2_DELAY
+#define BLIP_L2_DELAY 103
+#endif
 
 #define HAVE_LOWPAN_EXTERN_MATCH_CONTEXT
 int lowpan_extern_read_context(struct in6_addr *addr, int context) {
@@ -94,6 +102,7 @@ int lowpan_extern_match_context(struct in6_addr *addr, uint8_t *ctx_id) {
 }
 
 
+#include <lib6lowpan/ieee154_header.c>
 #include <lib6lowpan/lib6lowpan.c>
 #include <lib6lowpan/lib6lowpan_4944.c>
 #include <lib6lowpan/lib6lowpan_frag.c>
@@ -387,8 +396,6 @@ void SENDINFO_DECR(struct send_info *si) {
       struct lowpan_reconstruct recon;
 
       buf = getLowpanPayload(&lowmsg);
-
-      call Leds.led0Toggle();
       if ((rv = lowpan_recon_start(&frame_address, &recon, buf, len)) < 0) {
         goto fail;
       }
@@ -547,9 +554,9 @@ void SENDINFO_DECR(struct send_info *si) {
           frame_addr->ieee_dst.i_saddr == IEEE154_BROADCAST_ADDR) {
         call PacketLink.setRetries(s_entry->msg, 0);
       } else {
-        call PacketLink.setRetries(s_entry->msg, 3);
+        call PacketLink.setRetries(s_entry->msg, BLIP_L2_RETRIES);
       }
-      call PacketLink.setRetryDelay(s_entry->msg, 103);
+      call PacketLink.setRetryDelay(s_entry->msg, BLIP_L2_DELAY);
 
       SENDINFO_INCR(s_info);}
        

@@ -1,6 +1,5 @@
 module MotePlatformC @safe() {
   provides interface Init;
-  uses interface Init as SubInit;
 }
 implementation {
 
@@ -96,11 +95,6 @@ implementation {
 	TOSH_FLASH_M25P_DP();
 
       }//atomic
-    return call SubInit.init();
-  }
-  
-  default command error_t SubInit.init() {
     return SUCCESS;
   }
-  
 }

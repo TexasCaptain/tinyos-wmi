@@ -30,6 +30,14 @@ module IPForwardingEngineP {
     interface Leds;
   }
 } implementation {
+  /*
+#undef printfUART
+#undef printfUART_buf
+#undef printfUART_in6addr
+#define printfUART(FMT, args ...)
+#define printfUART_buf(buf, len)
+#define printfUART_in6addr(X)
+*/
 #define min(X,Y) (((X) < (Y)) ? (X) : (Y))
 
   /* simple routing table for now */
@@ -122,9 +130,10 @@ module IPForwardingEngineP {
     int i;
     for (i = 0; i < ROUTE_TABLE_SZ; i++) {
       if (routing_table[i].valid &&
-          ((routing_table[i].prefixlen == 0) || 
-           memcmp(prefix, routing_table[i].prefix.s6_addr,
-                  min(prefix_len_bits, routing_table[i].prefixlen) / 8) == 0)) {
+	  ((routing_table[i].prefixlen == 0) || 
+	   (memcmp(prefix, routing_table[i].prefix.s6_addr, 
+		   min(prefix_len_bits, routing_table[i].prefixlen) / 8) == 0 && 
+            prefix_len_bits))) {
         /* match! */
         return &routing_table[i];
       }
@@ -177,6 +186,8 @@ module IPForwardingEngineP {
                                                   (void *)ROUTE_INVAL_KEY);
     } else if (next_hop_entry) {
       printfUART("Forwarding -- got from routing table\n");
+
+      /* control messages do not need routing headers */
       if (!(signal ForwardingEvents.initiate[next_hop_entry->ifindex](pkt,
                                              &next_hop_entry->next_hop)))
         return FAIL;
@@ -212,7 +223,8 @@ module IPForwardingEngineP {
       int header_off = call IPPacket.findHeader(payload, len,
                                                 iph->ip6_nxt, IPV6_ROUTING);
       if (!(--iph->ip6_hlim)) {
-        /* TODO : ICMP error */
+        /* ICMP may send time exceeded */
+        // call ForwardingEvents.drop(iph, payload, len, ROUTE_DROP_HLIM);
         return;
       }
 
@@ -229,6 +241,8 @@ module IPForwardingEngineP {
                                            128);
         if (next_hop_entry == NULL) {
           /* oops, no route. */
+          /* RPL will reencapsulate the packet in some cases here */
+          // call ForwardingEvents.drop(iph, payload, len, ROUTE_DROP_NOROUTE);
           return; 
         }
         next_hop = &next_hop_entry->next_hop;
@@ -245,9 +259,10 @@ module IPForwardingEngineP {
       /* give the routing protocol a chance to do data-path validation
          on this packet. */
       /* RPL uses this to update the flow label fields */
-      if (!(signal ForwardingEvents.approve[next_hop_ifindex](iph, NULL, next_hop)))
+      if (!(signal ForwardingEvents.approve[next_hop_ifindex](iph, 
+                   (struct ip6_route*) payload, next_hop)))
         return;
-
+      printfUART("Recv: Forward Packet\n");
       call IPForward.send[next_hop_ifindex](next_hop, &pkt, (void *)next_hop_key);
     }
   }
@@ -259,7 +274,7 @@ module IPForwardingEngineP {
     if (key != ROUTE_INVAL_KEY) {
       entry = call ForwardingTable.lookupRouteKey(key);
       if (entry) {
-        printfUART("got entry... signal\n");
+        printfUART("got entry... signal %d\n", status->link_transmissions);
         signal ForwardingEvents.linkResult[ifindex](&entry->next_hop, status);
       }
     }
@@ -267,7 +282,7 @@ module IPForwardingEngineP {
 
   event void PrintTimer.fired() {
     int i;
-   printfUART("\ndestination                 gateway            interface\n");
+    printfUART("\ndestination                 gateway            interface\n");
     for (i = 0; i < ROUTE_TABLE_SZ; i++) {
       if (routing_table[i].valid) {
         printfUART_in6addr(&routing_table[i].prefix);
@@ -291,6 +306,11 @@ module IPForwardingEngineP {
   default event void ForwardingEvents.linkResult[uint8_t idx](struct in6_addr *host,
                                                               struct send_info * info) {}
   
+/*   default event void ForwardingEvents.drop[uint8_t idx](struct ip6_hdr *iph, */
+/*                                                         void *payload, */
+/*                                                         size_t len, */
+/*                                                         int reason) {} */
+
   default command error_t IPForward.send[uint8_t ifindex](struct in6_addr *next_hop,
                                                           struct ip6_packet *pkt,
                                                           void *data) {
