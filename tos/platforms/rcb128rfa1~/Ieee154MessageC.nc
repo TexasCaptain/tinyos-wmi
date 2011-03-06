@@ -32,49 +32,45 @@
  * Author: Miklos Maroti
  */
 
-configuration Ieee154MessageC
-{
-	provides
-	{
-		interface SplitControl;
+configuration Ieee154MessageC {
+  provides {
+   interface SplitControl;
 
-		interface Ieee154Send;
-		interface Receive as Ieee154Receive;
-		interface SendNotifier;
+   interface Ieee154Send;
+   interface Receive as Ieee154Receive;
+   interface SendNotifier;
 
-		interface Packet;
-		interface Ieee154Packet;
-		interface Resource as SendResource[uint8_t clint];
+   interface Packet;
+   interface Ieee154Packet;
+   interface Resource as SendResource[uint8_t clint];
 
-		interface PacketAcknowledgements;
-		interface LowPowerListening;
-		interface PacketLink;
-		interface RadioChannel;
+   interface PacketAcknowledgements;
+   interface LowPowerListening;
+   interface PacketLink;
+   interface RadioChannel;
 
-		interface PacketTimeStamp<TMicro, uint32_t> as PacketTimeStampMicro;
-		interface PacketTimeStamp<TMilli, uint32_t> as PacketTimeStampMilli;
-	}
-}
+   interface PacketTimeStamp<TMicro, uint32_t> as PacketTimeStampMicro;
+   interface PacketTimeStamp<TMilli, uint32_t> as PacketTimeStampMilli;
+  }
 
-implementation
-{
-	components RFA1Ieee154MessageC as MessageC;
+} implementation {
+	components RFA1Ieee154MessageC as Msg;
 
-	SplitControl = MessageC;
+	SplitControl = Msg;
 
-	Ieee154Send = MessageC;
-	Ieee154Receive = MessageC;
-	SendNotifier = MessageC;
+	Ieee154Send = Msg;
+	Ieee154Receive = Msg;
+	SendNotifier = Msg;
 
-	Packet = MessageC;
-	Ieee154Packet = MessageC;
-	SendResource = MessageC;
+	Packet = Msg;
+	Ieee154Packet = Msg;
+	SendResource = Msg;
 
-	PacketAcknowledgements = MessageC;
-	LowPowerListening = MessageC;
-	PacketLink = MessageC;
-	RadioChannel = MessageC;
+	PacketAcknowledgements = Msg;
+	LowPowerListening = Msg;
+	PacketLink = Msg;
+	RadioChannel = Msg;
 
-	PacketTimeStampMilli = MessageC;
-	PacketTimeStampMicro = MessageC;
+	PacketTimeStampMilli = Msg;
+	PacketTimeStampMicro = Msg;
 }

@@ -119,6 +119,8 @@ module BaseStationP {
 
 #if defined(PLATFORM_IRIS) || defined(PLATFORM_MULLE)
     interface RadioChannel;
+#elif defined(PLATFORM_RCB128RFA1)
+    interface RFA1Config;
 #else
     interface CC2420Config;
 #endif

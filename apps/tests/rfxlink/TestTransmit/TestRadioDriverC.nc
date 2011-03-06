@@ -83,7 +83,7 @@ implementation
 #elif defined(PLATFORM_MICAZ) || defined(PLATFORM_TELOSA) || defined(PLATFORM_TELOSB)
 	components CC2420XDriverLayerC as RadioDriverLayerC;
 	components CC2420XRadioP as RadioP;
-#elif defined(PLATFORM_UCMINI)
+#elif defined(PLATFORM_RCB128RFA1)
 	components RFA1DriverLayerC as RadioDriverLayerC;
 	components RFA1RadioP as RadioP;
 #endif

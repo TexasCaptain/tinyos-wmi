@@ -47,7 +47,7 @@ module RadioDriverConfigP
 		interface RF212DriverConfig as RadioDriverConfig;
 #elif defined(PLATFORM_MICAZ) || defined(PLATFORM_TELOSA) || defined(PLATFORM_TELOSB)
 		interface CC2420XDriverConfig as RadioDriverConfig;
-#elif defined(PLATFORM_UCMINI)
+#elif defined(PLATFORM_RCB128RFA1)
 		interface RFA1DriverConfig as RadioDriverConfig;
 #endif
 	}

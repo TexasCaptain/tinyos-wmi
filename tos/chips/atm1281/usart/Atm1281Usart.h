@@ -204,7 +204,7 @@ typedef union {
      
      
 Atm1281UartUnionConfig_t atm1281_uart_default_config = {{
-#if MHZ == 16
+#if PLATFORM_MHZ == 16
   #if PLATFORM_BAUDRATE == 115200L
   ubr : ATM1281_115200_BAUD_16MHZ_2X,
   #elif PLATFORM_BAUDRATE == 57600L
@@ -214,7 +214,7 @@ Atm1281UartUnionConfig_t atm1281_uart_default_config = {{
   #elif PLATFORM_BAUDRATE == 19200L
   ubr : ATM1281_19200_BAUD_16MHZ_2X,
   #endif
-#elif MHZ == 8
+#elif PLATFORM_MHZ == 8
   #if PLATFORM_BAUDRATE == 115200L
   ubr : ATM1281_115200_BAUD_8MHZ_2X,
   #elif PLATFORM_BAUDRATE == 57600L
@@ -224,7 +224,7 @@ Atm1281UartUnionConfig_t atm1281_uart_default_config = {{
   #elif PLATFORM_BAUDRATE == 19200L
   ubr : ATM1281_19200_BAUD_8MHZ_2X,
   #endif
-#elif MHZ == 4
+#elif PLATFORM_MHZ == 4
   #if PLATFORM_BAUDRATE == 115200L
   ubr : ATM1281_115200_BAUD_4MHZ_2X,
   #elif PLATFORM_BAUDRATE == 57600L
@@ -234,7 +234,7 @@ Atm1281UartUnionConfig_t atm1281_uart_default_config = {{
   #elif PLATFORM_BAUDRATE == 19200L
   ubr : ATM1281_19200_BAUD_4MHZ_2X,
   #endif
-#elif MHZ == 1
+#elif PLATFORM_MHZ == 1
   #if PLATFORM_BAUDRATE == 57600L
   ubr : ATM1281_57600_BAUD_1MHZ_2X,
   #elif PLATFORM_BAUDRATE == 38400L
