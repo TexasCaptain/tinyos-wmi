@@ -7,8 +7,8 @@ configuration PppRouterC {
   components MainC;
   PppRouterP.Boot -> MainC;
 
-  components LedC;
-  PppRouterP.MultiLed -> LedC;
+  //components LedC;
+  //PppRouterP.MultiLed -> LedC;
 
   components PppDaemonC;
   PppRouterP.Ppp -> PppDaemonC;

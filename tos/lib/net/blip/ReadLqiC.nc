@@ -23,6 +23,10 @@ configuration ReadLqiC {
   components RF230ReadLqiC, RF230Ieee154MessageC;
   ReadLqi = RF230ReadLqiC;
   RF230ReadLqiC.SubLqi -> RF230Ieee154MessageC.PacketLinkQuality;
+#elif defined(PLATFORM_RCB128RFA1)
+  components RFA1ReadLqiC, RFA1Ieee154MessageC;
+  ReadLqi = RFA1ReadLqiC;
+  RFA1ReadLqiC.SubLqi -> RFA1Ieee154MessageC.PacketLinkQuality;
 #else
 #error "No radio support is available for your platform"
 #endif

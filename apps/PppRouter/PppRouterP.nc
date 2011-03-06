@@ -12,7 +12,7 @@ module PppRouterP {
   }
   uses {
     interface Boot;
-    interface MultiLed;
+    //interface MultiLed;
     interface SplitControl as IPControl;
     interface SplitControl as Ppp;
     interface LcpAutomaton as Ipv6LcpAutomaton;
@@ -72,7 +72,7 @@ module PppRouterP {
                                 unsigned int len) {
     struct ip6_hdr *iph = (struct ip6_hdr *)data;
     void *payload = (iph + 1);
-    call MultiLed.toggle(0);
+    //call MultiLed.toggle(0);
     signal IPForward.recv(iph, payload, NULL);
     return SUCCESS;
   }
@@ -93,7 +93,7 @@ module PppRouterP {
 
     memcpy(buf, &msg->ip6_hdr, sizeof(struct ip6_hdr));
     iov_read(msg->ip6_data, 0, len, buf + sizeof(struct ip6_hdr));
-    call MultiLed.toggle(1);
+    //call MultiLed.toggle(1);
     rv = call PppIpv6.transmit(buf, len + sizeof(struct ip6_hdr));
     ip_free(buf);
 

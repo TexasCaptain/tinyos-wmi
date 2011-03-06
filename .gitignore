@@ -87,4 +87,27 @@ support/sdk/c/blip/lib6lowpan/Makefile
 support/sdk/c/blip/missing
 support/sdk/c/blip/stamp-h.in
 support/sdk/c/blip/stamp-h1
+support/sdk/c/blip/Makefile.in
+support/sdk/c/blip/interface/Makefile.in
+support/sdk/c/blip/interface/tun_dev.c
+support/sdk/c/blip/lib6lowpan/Makefile.in
+support/sdk/c/sf/autoconf.h
+support/sdk/c/sf/Makefile
+support/sdk/c/sf/Makefile.in
+support/sdk/c/sf/aclocal.m4
+support/sdk/c/sf/autoconf.h.in
+support/sdk/c/sf/autom4te.cache/
+support/sdk/c/sf/config-aux/
+support/sdk/c/sf/config.status
+support/sdk/c/sf/configure
+support/sdk/c/sf/prettylisten
+support/sdk/c/sf/seriallisten
+support/sdk/c/sf/serialpacket.c
+support/sdk/c/sf/serialpacket.h
+support/sdk/c/sf/serialprotocol.h
+support/sdk/c/sf/serialsend
+support/sdk/c/sf/sf
+support/sdk/c/sf/sflisten
+support/sdk/c/sf/sfsend
+support/sdk/c/sf/stamp-h1
 

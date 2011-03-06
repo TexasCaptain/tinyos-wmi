@@ -40,7 +40,17 @@ configuration IPDispatchC {
 
   /* IPDispatchP wiring -- fragment rassembly and lib6lowpan bindings */
   components IPDispatchP;
+#if defined(PLATFORM_MICAZ) || defined(PLATFORM_TELOSB)  || \
+    defined(PLATFORM_EPIC)  || defined(PLATFORM_SHIMMER) || \
+    defined(PLATFORM_SHIMMER2) || defined(PLATFORM_INTELMOTE2)
   components CC2420RadioC as MessageC;
+#elif defined(PLATFORM_IRIS) || defined(PLATFORM_MULLE) 
+  components RF230RadioC as MessageC;
+#elif defined(PLATFORM_RCB128RFA1)
+  components RFA1RadioC as MessageC;
+#else
+#error "No radio support is available for your platform"
+#endif
   components ReadLqiC;
   components new TimerMilliC();
 
