@@ -47,6 +47,7 @@ configuration IPDispatchC {
 #elif defined(PLATFORM_IRIS) || defined(PLATFORM_MULLE) 
   components RF230RadioC as MessageC;
 #elif defined(PLATFORM_RCB128RFA1)
+  //components RFA1RadioC, new Ieee154MessageLayerC();
   components RFA1RadioC as MessageC;
 #else
 #error "No radio support is available for your platform"

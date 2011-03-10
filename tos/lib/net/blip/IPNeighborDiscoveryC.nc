@@ -8,7 +8,7 @@ configuration IPNeighborDiscoveryC {
     interface IPLower;
   }
 } implementation {
-  components IPNeighborDiscoveryP, IPAddressC, Ieee154AddressC;
+  components IPNeighborDiscoveryP, IPAddressC, RFA1DriverLayerC as Ieee154AddressC;
 
   NeighborDiscovery = IPNeighborDiscoveryP;
   IPForward = IPNeighborDiscoveryP;

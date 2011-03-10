@@ -76,12 +76,13 @@ typedef struct rfa1packet_metadata_t
 	rfa1_metadata_t rfa1;
 } rfa1packet_metadata_t;
 
+/* This is now in RFA1DriverLayer.h
 enum//masks for easyer handling
 {
 	RFA1_TX_PWR_MASK=0x0F,
 	RFA1_CHANNEL_MASK=0x1F,
 	RFA1_TRX_STATUS_MASK=0x1F,
 	RFA1_RSSI_MASK=0x1F,
-};
+}; */
 
 #endif//__RFA1RADIO_H__

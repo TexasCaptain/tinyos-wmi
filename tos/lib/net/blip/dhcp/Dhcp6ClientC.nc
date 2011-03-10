@@ -51,7 +51,7 @@ configuration Dhcp6ClientC {
   components IPStackControlP;
   components new UdpSocketC();
   components new TimerMilliC();
-  components RandomC, Ieee154AddressC, IPAddressC;
+  components RandomC, RFA1DriverLayerC as Ieee154AddressC, IPAddressC;
 
   Dhcp6Info = Dhcp6ClientP;
 

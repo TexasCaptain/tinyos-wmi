@@ -2,23 +2,35 @@
  * Copyright (c) 2007, Vanderbilt University
  * All rights reserved.
  *
- * Permission to use, copy, modify, and distribute this software and its
- * documentation for any purpose, without fee, and without written agreement is
- * hereby granted, provided that the above copyright notice, the following
- * two paragraphs and the author appear in all copies of this software.
- * 
- * IN NO EVENT SHALL THE VANDERBILT UNIVERSITY BE LIABLE TO ANY PARTY FOR
- * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT
- * OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE VANDERBILT
- * UNIVERSITY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * THE VANDERBILT UNIVERSITY SPECIFICALLY DISCLAIMS ANY WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
- * ON AN "AS IS" BASIS, AND THE VANDERBILT UNIVERSITY HAS NO OBLIGATION TO
- * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the
+ *   distribution.
+ * - Neither the name of the copyright holder nor the names of
+ *   its contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Miklos Maroti
+ * Author: Andras Biro
  */
 
 #include <RadioConfig.h>
@@ -35,7 +47,7 @@ configuration RFA1RadioC
 		interface Receive as Snoop[am_id_t id];
 		interface SendNotifier[am_id_t id];
 
-		/* for TOSThreads */
+		// for TOSThreads
 		interface Receive as ReceiveDefault[am_id_t id];
 		interface Receive as SnoopDefault[am_id_t id];
 
@@ -68,15 +80,17 @@ configuration RFA1RadioC
 		interface PacketField<uint8_t> as PacketRSSI;
 
 		interface LocalTime<TRadio> as LocalTimeRadio;
-		interface PacketTimeStamp<TRadio, uint32_t> as PacketTimeStamp32khz;
+		interface PacketTimeStamp<TRadio, uint32_t> as PacketTimeStampRadio;
 		interface PacketTimeStamp<TMilli, uint32_t> as PacketTimeStampMilli;
 	}
 }
 
 implementation
 {
+	#define UQ_METADATA_FLAGS	"UQ_RFA1_METADATA_FLAGS"
+	#define UQ_RADIO_ALARM		"UQ_RFA1_RADIO_ALARM"
 
-	#define UQ_METADATA_FLAGS "UQ_RFA1_METADATA_FLAGS"
+// -------- RFA1 RadioP
 
 	components RFA1RadioP;
 
@@ -85,9 +99,14 @@ implementation
 #endif
 
 	RFA1RadioP.Ieee154PacketLayer -> Ieee154PacketLayerC;
+	RFA1RadioP.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
 	RFA1RadioP.PacketTimeStamp -> TimeStampingLayerC;
 	RFA1RadioP.RFA1Packet -> RFA1DriverLayerC;
-	RFA1RadioP.LocalTime -> RFA1DriverLayerC;
+
+// -------- RadioAlarm
+
+	components new RadioAlarmC();
+	RadioAlarmC.Alarm -> RFA1DriverLayerC;
 
 // -------- Active Message
 
@@ -104,6 +123,9 @@ implementation
 	SendNotifier = ActiveMessageLayerC;
 	AMPacket = ActiveMessageLayerC;
 	PacketForActiveMessage = ActiveMessageLayerC;
+
+	ReceiveDefault = ActiveMessageLayerC.ReceiveDefault;
+	SnoopDefault = ActiveMessageLayerC.SnoopDefault;
 #endif
 
 // -------- Automatic RadioSend Resource
@@ -162,7 +184,7 @@ implementation
 
 #ifdef LOW_POWER_LISTENING
 	#warning "*** USING LOW POWER LISTENING LAYER"
-	components LowPowerListeningLayerC;
+	components new LowPowerListeningLayerC();
 	LowPowerListeningLayerC.Config -> RFA1RadioP;
 	LowPowerListeningLayerC.PacketAcknowledgements -> SoftwareAckLayerC;
 #else	
@@ -222,11 +244,13 @@ implementation
 	CollisionAvoidanceLayerC.Config -> RFA1RadioP;
 	CollisionAvoidanceLayerC.SubSend -> SoftwareAckLayerC;
 	CollisionAvoidanceLayerC.SubReceive -> SoftwareAckLayerC;
+	CollisionAvoidanceLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
 
 // -------- SoftwareAcknowledgement
 
 	components new SoftwareAckLayerC();
 	SoftwareAckLayerC.AckReceivedFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
+	SoftwareAckLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
 	PacketAcknowledgements = SoftwareAckLayerC;
 	SoftwareAckLayerC.Config -> RFA1RadioP;
 	SoftwareAckLayerC.SubSend -> CsmaLayerC;
@@ -245,7 +269,7 @@ implementation
 	components new TimeStampingLayerC();
 	TimeStampingLayerC.LocalTimeRadio -> RFA1DriverLayerC;
 	TimeStampingLayerC.SubPacket -> MetadataFlagsLayerC;
-	PacketTimeStamp32khz = TimeStampingLayerC;
+	PacketTimeStampRadio = TimeStampingLayerC;
 	PacketTimeStampMilli = TimeStampingLayerC;
 	TimeStampingLayerC.TimeStampFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
 
@@ -263,13 +287,9 @@ implementation
 	PacketLinkQuality = RFA1DriverLayerC.PacketLinkQuality;
 	PacketRSSI = RFA1DriverLayerC.PacketRSSI;
 	LocalTimeRadio = RFA1DriverLayerC;
+
 	RFA1DriverLayerC.TransmitPowerFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
 	RFA1DriverLayerC.RSSIFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
 	RFA1DriverLayerC.TimeSyncFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
-
-// -------- RadioAlarm
-
-	components RadioAlarmC, new Alarm62khz32C() as AlarmC;
-	RadioAlarmC.Alarm -> AlarmC;
-	
+	RFA1DriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
 }

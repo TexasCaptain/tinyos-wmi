@@ -47,11 +47,13 @@ module RFA1DriverLayerP
     interface Init as PlatformInit @exactlyonce();
     interface Init as SoftwareInit @exactlyonce();
 
+    interface Ieee154Address;
+
     interface RadioState;
-    interface RadioSend;
-    interface RadioReceive;
+    interface RadioSend; // as BareSend;
+    interface RadioReceive; // as BareReceive;
     interface RadioCCA;
-    interface RadioPacket;
+    interface RadioPacket; // as BarePacket;
 
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
@@ -63,6 +65,8 @@ module RFA1DriverLayerP
   {
     interface BusyWait<TMicro, uint16_t>;
     interface LocalTime<TRadio>;
+
+    interface LocalIeeeEui64 as RFA1IeeeEui64;
 
     interface RFA1DriverConfig as Config;
 
@@ -79,10 +83,79 @@ module RFA1DriverLayerP
     interface DiagMsg;
 #endif
   }
-}
 
-implementation
-{
+} implementation {
+
+  // ieee154_saddr_t m_saddr = TOS_NODE_ID;
+  // ieee154_panid_t m_panid = TOS_WPAN_ID;
+
+  command ieee154_laddr_t Ieee154Address.getExtAddr() {
+    ieee154_laddr_t addr = call RFA1IeeeEui64.getId();
+    uint8_t i, t;
+    /* EUI-64 is big endian, but P802.15.4 */
+    /* addresses are little endian */
+    for (i = 0; i < 4; i++) {
+      t = addr.data[i];
+      addr.data[i] = addr.data[7 - i];
+      addr.data[7 - i] = t;
+    }
+    return addr;
+  }
+
+  command error_t Ieee154Address.setShortAddr(ieee154_saddr_t addr) {
+
+    atomic {
+      // if ( m_saddr != addr ) {
+      // m_saddr = addr;
+      SHORT_ADDR_0 = ( addr & 0xFF );
+      SHORT_ADDR_1 = ( addr >> 8*1 ) & 0xFF;
+      // }
+    }
+    signal Ieee154Address.changed();
+    return SUCCESS;
+  }
+
+  command ieee154_saddr_t Ieee154Address.getShortAddr() {
+
+    ieee154_saddr_t addr;
+    uint8_t a;
+
+    atomic { // needs testing
+      a = SHORT_ADDR_0;
+      addr = ((ieee154_saddr_t)(a << 8));
+      a = SHORT_ADDR_1;
+      addr = (addr | a);
+    }
+    return addr;
+  }
+
+  /*
+  command error_t Ieee154Address.setPanId(ieee154_panid_t panid) {
+
+    atomic {
+      // if ( m_saddr != addr ) {
+      // m_saddr = addr;
+      PAN_ID_0 = ( panid & 0xFF );
+      PAN_ID_1 = ( panid >> 8*1 ) & 0xFF;
+      // }
+    }
+    return SUCCESS;
+  } */
+
+  command ieee154_panid_t Ieee154Address.getPanId() {
+
+    ieee154_saddr_t panid;
+    uint8_t a;
+
+    atomic { // needs testing
+      a = SHORT_ADDR_0;
+      panid = ((ieee154_panid_t)(a << 8));
+      a = SHORT_ADDR_1;
+      panid = (panid | a);
+    }
+    return panid;
+  }
+
   rfa1_header_t* getHeader(message_t* msg)
   {
     return ((void*)msg) + call Config.headerLength(msg);
@@ -142,8 +215,8 @@ implementation
 
   norace uint8_t radioIrq;
 
-  tasklet_norace uint8_t txPower;
-  tasklet_norace uint8_t channel;
+  tasklet_norace uint8_t m_tx_power;
+  tasklet_norace uint8_t m_channel;
 
   tasklet_norace message_t* rxMsg;
   message_t rxMsgBuffer;
@@ -152,6 +225,8 @@ implementation
 
   tasklet_norace uint8_t rssiClear;
   tasklet_norace uint8_t rssiBusy;
+
+  //ieee_eui64_t m_ext_addr;
 
   /*----------------- ALARM -----------------*/
 
@@ -200,6 +275,8 @@ implementation
     // these are just good approximates
     rssiClear = 0;
     rssiBusy = 90;
+
+    //m_ext_addr = call LocalIeeeEui64.getId();
     
     return SUCCESS;
   }
@@ -210,10 +287,10 @@ implementation
     //TODO PA_EXT settings with defines
     PHY_TX_PWR=RFA1_PA_BUF_LT | RFA1_PA_LT | (RFA1_DEF_RFPOWER&RFA1_TX_PWR_MASK)<<TX_PWR0;
 
-    txPower = RFA1_DEF_RFPOWER & RFA1_TX_PWR_MASK;
-    channel = RFA1_DEF_CHANNEL & RFA1_CHANNEL_MASK;
+    m_tx_power = RFA1_DEF_RFPOWER & RFA1_TX_PWR_MASK;
+    m_channel = RFA1_DEF_CHANNEL & RFA1_CHANNEL_MASK;
 	
-    PHY_CC_CCA=RFA1_CCA_MODE_VALUE|channel;
+    PHY_CC_CCA=RFA1_CCA_MODE_VALUE|m_channel;
 	
     SET_BIT(TRXPR,SLPTR);
 
@@ -225,19 +302,19 @@ implementation
 
   tasklet_async command uint8_t RadioState.getChannel()
   {
-    return channel;
+    return m_channel;
   }
 
-  tasklet_async command error_t RadioState.setChannel(uint8_t c)
+  tasklet_async command error_t RadioState.setChannel(uint8_t channel)
   {
-    c &= RFA1_CHANNEL_MASK;
+    channel &= RFA1_CHANNEL_MASK;
 
     if( cmd != CMD_NONE )
       return EBUSY;
-    else if( channel == c )
+    else if( m_channel == channel )
       return EALREADY;
 
-    channel = c;
+    m_channel = channel;
     cmd = CMD_CHANNEL;
     call Tasklet.schedule();
 
@@ -250,7 +327,7 @@ implementation
     RADIO_ASSERT( state == STATE_SLEEP || state == STATE_TRX_OFF || state == STATE_RX_ON );
 
 
-    PHY_CC_CCA=RFA1_CCA_MODE_VALUE|channel;
+    PHY_CC_CCA=RFA1_CCA_MODE_VALUE|m_channel;
 
     if( state == STATE_RX_ON )
       state = STATE_TRX_OFF_2_RX_ON;
@@ -281,7 +358,7 @@ implementation
 
       // setChannel was ignored in SLEEP because the SPI was not working, so do it here
       //TODO: is it necessary for rfa1? - probably not
-      PHY_CC_CCA=RFA1_CCA_MODE_VALUE | channel;
+      PHY_CC_CCA=RFA1_CCA_MODE_VALUE | m_channel;
 
       TRX_STATE=CMD_RX_ON;
       state = STATE_TRX_OFF_2_RX_ON;
@@ -364,10 +441,10 @@ implementation
     length = (call PacketTransmitPower.isSet(msg) ?
         call PacketTransmitPower.get(msg) : RFA1_DEF_RFPOWER) & RFA1_TX_PWR_MASK;
 
-    if( length != txPower )
+    if( length != m_tx_power )
     {
-      txPower = length;
-      PHY_TX_PWR=RFA1_PA_BUF_LT | RFA1_PA_LT | txPower<<TX_PWR0;
+      m_tx_power = length;
+      PHY_TX_PWR=RFA1_PA_BUF_LT | RFA1_PA_LT | m_tx_power<<TX_PWR0;
     }
 
     if( call Config.requiresRssiCca(msg) 
@@ -486,7 +563,7 @@ implementation
     TRX_STATE=CMD_RX_ON;
     //end of workaround
     
-    PHY_CC_CCA = 1 << CCA_REQUEST | RFA1_CCA_MODE_VALUE | channel;
+    PHY_CC_CCA = 1 << CCA_REQUEST | RFA1_CCA_MODE_VALUE | m_channel;
     //modify it with TRX24_CCA_ED_DONE IRQ
     call RadioAlarm.wait(CCA_REQUEST_TIME);
     cmd = CMD_CCA;

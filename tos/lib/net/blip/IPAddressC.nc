@@ -25,9 +25,9 @@ configuration IPAddressC {
   provides interface IPAddress;
 
 } implementation {
-  components IPAddressP, Ieee154AddressC;
+  components IPAddressP, RFA1DriverLayerP as Ieee154AddressC;
 
   IPAddress = IPAddressP;
-  IPAddressP.Ieee154Address -> Ieee154AddressC;
+  //IPAddressP.Ieee154Address -> RFA1DriverLayerP.Ieee154AddressC;
 }
 

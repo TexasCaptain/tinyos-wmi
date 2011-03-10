@@ -48,7 +48,7 @@ configuration Dhcp6RelayC {
 
 } implementation {
   components Dhcp6RelayP, Dhcp6ClientC;
-  components IPAddressC, Ieee154AddressC;
+  components IPAddressC, RFA1DriverLayerC as Ieee154AddressC;
   components new TimerMilliC(), new UdpSocketC();
   components RandomC;
   components MainC;
